@@ -12,9 +12,7 @@ class TwilioService implements OTPInterface
     {
         try {
             // Your Account SID and Auth Token from twilio.com/console
-            $sid = 'ACffcea15692c673fea1d48077a9775ad4';
-            $token = '56fa93fa0d762860635d6d274df003a6';
-            $client = new Client($sid, $token);
+            $client = new Client(env('TWILIO_SID'), env('TWILIO_TOKEN'));
 
             $response = $client->messages->create(
                 $to,
