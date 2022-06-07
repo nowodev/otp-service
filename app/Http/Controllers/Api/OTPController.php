@@ -4,11 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Actions\GenerateOTP;
 use Illuminate\Http\Request;
-use App\Services\NexmoService;
-use App\Services\TwilioService;
-use App\Services\ClickSendService;
+use App\Services\SMS\NexmoService;
+use App\Services\SMS\TwilioService;
 use App\Http\Controllers\Controller;
+use App\Services\SMS\ClickSendService;
 use Illuminate\Support\Facades\Validator;
+use App\Services\WhatsApp\TwilioService as WhatsAppTwilioService;
 
 class OTPController extends Controller
 {
@@ -21,20 +22,23 @@ class OTPController extends Controller
     public $twilioService;
     public $clickSendService;
     public $delivered_message0;
+    public $whatsAppTwilioService;
 
     public function __construct(
         GenerateOTP $generateOTP,
         NexmoService $nexmoService,
         TwilioService $twilioService,
-        ClickSendService $clickSendService
+        ClickSendService $clickSendService,
+        WhatsAppTwilioService $whatsAppTwilioService
     ) {
-        $this->nexmo       = $nexmoService;
-        $this->twilio      = $twilioService;
-        $this->generateOTP = $generateOTP;
-        $this->clickSend   = $clickSendService;
+        $this->nexmo                 = $nexmoService;
+        $this->twilio                = $twilioService;
+        $this->generateOTP           = $generateOTP;
+        $this->clickSend             = $clickSendService;
+        $this->whatsAppTwilioService = $whatsAppTwilioService;
     }
 
-    public function sendOTP(Request $request)
+    public function sendSMS(Request $request)
     {
         $validator = Validator::make($request->all(), [
             "phone_number" => ['required', 'string', 'regex:/^\+[0-9]{13,18}$/', 'starts_with:234,+234'],
@@ -64,10 +68,10 @@ class OTPController extends Controller
         }
 
         if (!is_null($this->nexmo)) {
-            $this->service0 = $this->nexmo['status'] == 0 ? 'nexmo' : 'twilio';
+            $this->service0 = $this->nexmo['status'] == 0 ? 'nexmo-sms' : 'twilio-sms';
         }
 
-        $service = ($this->clicksend['status'] == 'SUCCESS') ? 'clicksend' : $this->service0;
+        $service = ($this->clicksend['status'] == 'SUCCESS') ? 'clicksend-sms' : $this->service0;
 
         // if ($this->clicksend['status'] != 'SUCCESS' && $this->nexmo['status'] != 0 && $this->twilio['status'] != 'sent') {
         if ($this->clicksend['status'] != 'SUCCESS' && $this->nexmo['status'] != 0 && $this->twilio['status'] != 'queued') {
@@ -95,6 +99,50 @@ class OTPController extends Controller
             'data'        => [
                 'service'           => $service,
                 'delivered_message' => $delivered_message
+            ],
+        ]);
+    }
+
+
+    public function sendWhatsApp(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            "phone_number" => ['required', 'string', 'regex:/^\+[0-9]{13,18}$/', 'starts_with:234,+234'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status_code' => 401,
+                'message'     => 'Error Validation',
+                'data'        => [
+                    $validator->errors()
+                ],
+            ]);
+        }
+
+        $phone   = $request->phone_number;
+        $message = $this->generateOTP->handle();
+
+        $twilioWhatsapp = $this->whatsAppTwilioService->generateOTP($phone, $message);
+
+
+        // if ($twilioWhatsapp['status'] != 'sent') {
+        if ($twilioWhatsapp['status'] != 'queued') {
+            return response()->json([
+                'status_code' => 401,
+                'status'      => 'error',
+                'data'        => [
+                    'twilio' => $twilioWhatsapp['message']
+                ],
+            ]);
+        }
+
+        return response()->json([
+            'status_code' => 200,
+            'status'      => 'success',
+            'data'        => [
+                'service'           => 'twilio-whatsapp',
+                'delivered_message' => $twilioWhatsapp['delivered_message']
             ],
         ]);
     }

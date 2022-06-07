@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\SMS;
 
 use ClickSend;
 use App\Interfaces\OTPInterface;

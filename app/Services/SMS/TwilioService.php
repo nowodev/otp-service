@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\SMS;
 
 use Twilio\Rest\Client;
 use App\Interfaces\OTPInterface;
