@@ -19,4 +19,5 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::post('sms', OTPController::class);
+Route::post('sms', [OTPController::class, 'sendOTP']);
+Route::get('sms_verify', [OTPController::class, 'verifyOTP']);

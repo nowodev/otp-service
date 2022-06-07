@@ -5,12 +5,19 @@ namespace App\Http\Controllers\Api;
 use Illuminate\Http\Request;
 use App\Services\NexmoService;
 use App\Services\TwilioService;
+use App\Services\ClickSendService;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 
 class OTPController extends Controller
 {
-    public function __invoke(Request $request, NexmoService $nexmoService, TwilioService $twilioService)
+    public $clickSend;
+    public $nexmo;
+    public $twilio;
+    public $service0;
+    public $delivered_message0;
+
+    public function sendOTP(Request $request, NexmoService $nexmoService, TwilioService $twilioService, ClickSendService $clickSendService)
     {
         $validator = Validator::make($request->all(), [
             "phone_number" => ['required', 'string', 'regex:/^\+[0-9]{13,18}$/', 'starts_with:234,+234'],
@@ -30,37 +37,48 @@ class OTPController extends Controller
         $phone = $request->phone_number;
         $message = $request->message;
 
-        $nexmo = $nexmoService->generateOTP($phone, $message);
+        $this->clicksend = $clickSendService->generateOTP($phone, $message);
 
-        if ($nexmo['status'] != 0) {
-            $twilio = $twilioService->generateOTP($phone, $message);
+        if ($this->clicksend['status'] != 'SUCCESS') {
+            $this->nexmo = $nexmoService->generateOTP($phone, $message);
 
-            if ($twilio['status'] != 'sent') {
-                // $clicksend = $clicksendService->generateOTP($phone, $message);
+            if ($this->nexmo['status'] != 0) {
+                $this->twilio = $twilioService->generateOTP($phone, $message);
             };
         }
 
-        $service1 = ($twilio['status'] == 'sent') ? 'twilio' : 'clicksend';
-        $service = ($nexmo['status'] == 0) ? 'nexmo' : $service1;
+        if (!is_null($this->nexmo)) {
+            $this->service0 =  $this->nexmo['status'] == 0 ? 'nexmo' : 'twilio';
+        }
 
-        if ($nexmo['status'] != 0 && $twilio['status'] != 'sent' /* && $clicksend['status'] != 'sent' */) {
+        $service = ($this->clicksend['status'] == 'SUCCESS') ? 'clicksend' : $this->service0;
+
+        // if ($this->clicksend['status'] != 'SUCCESS' && $this->nexmo['status'] != 0 && $this->twilio['status'] != 'sent') {
+        if ($this->clicksend['status'] != 'SUCCESS' && $this->nexmo['status'] != 0 && $this->twilio['status'] != 'queued') {
             return response()->json([
                 'status_code' => 401,
                 'status' => 'error',
                 'data' => [
-                    'nexmo' => $nexmo['message'],
-                    'twilio' => $twilio['message'],
-                    // 'clicksend' => $clicksend
+                    'clicksend' => $this->clicksend['message'],
+                    'nexmo' => $this->nexmo['message'],
+                    'twilio' => $this->twilio['message']
                 ],
             ]);
         }
+
+
+        if (!is_null($this->nexmo)) {
+            $this->delivered_message0 = (!is_null($this->nexmo) && $this->nexmo['status'] == 0) ? $this->nexmo['delivered_message'] : $this->twilio['delivered_message'];
+        }
+
+        $delivered_message = ($this->clicksend['status'] == 'SUCCESS') ? $this->clicksend['delivered_message'] : $this->delivered_message0;
 
         return response()->json([
             'status_code' => 200,
             'status' => 'success',
             'data' => [
                 'service' => $service,
-                'delivered_message' => $nexmo['delivered_message'] ?? $twilio['delivered_message']
+                'delivered_message' => $delivered_message
             ],
         ]);
     }
