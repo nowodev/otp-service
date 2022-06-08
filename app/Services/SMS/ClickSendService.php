@@ -3,6 +3,7 @@
 namespace App\Services\SMS;
 
 use ClickSend;
+use Exception;
 use App\Interfaces\OTPInterface;
 
 class ClickSendService implements OTPInterface
