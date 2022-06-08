@@ -18,19 +18,20 @@ class TwilioService implements OTPInterface
                 $to,
                 [
                     // A Twilio phone number you purchased at twilio.com/console
-                    'from' => '+19895821065',
+                    // 'from' => '+19895821065',
+                    "messagingServiceSid" => env('TWILIO_MSSID'),
                     // the body of the text message you'd like to send
-                    'body' => $message
+                    'body' =>  "Your OTP is: {$message}"
                 ]
             );
 
             return [
-                'status'            => $response->status,
-                'delivered_message' => $response->body
+                'status' => $response->status,
+                'otp'    => $message
             ];
         } catch (TwilioException $e) {
             return [
-                'status'  => $response->status,
+                'status'  => 'error', // $response->status,
                 'message' => 'Could not send SMS notification.' . ' Twilio replied with: ' . $e
             ];
         }

@@ -17,12 +17,12 @@ class TwilioService implements OTPInterface
                 "whatsapp:{$to}",
                 [
                     "from" => "whatsapp:+14155238886",
-                    "body" => $message
+                    "body" => "Your OTP is: {$message}"
                 ]
             );
             return [
-                'status'            => $response->status,
-                'delivered_message' => $response->body
+                'status' => $response->status,
+                'otp'    => $message
             ];
         } catch (TwilioException $e) {
             return [

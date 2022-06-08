@@ -3,7 +3,6 @@
 namespace App\Actions;
 
 use App\Models\Otp;
-use Illuminate\Support\Facades\DB;
 
 class GenerateOTP
 {
@@ -18,6 +17,6 @@ class GenerateOTP
             'otp'          => $otp
         ]);
 
-        return "Your OTP is: {$otp}";
+        return $otp;
     }
 }

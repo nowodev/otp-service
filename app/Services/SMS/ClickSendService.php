@@ -19,22 +19,22 @@ class ClickSendService implements OTPInterface
         $apiInstance = new ClickSend\Api\SMSApi(new \GuzzleHttp\Client(), $config);
         $msg         = new \ClickSend\Model\SmsMessage();
 
-        $msg->setFrom(env('CLICKSEND_FROM_NUMBER'));
-        $msg->setBody($message);
+        // $msg->setFrom(env('CLICKSEND_FROM_NUMBER'));
+        $msg->setBody("Your OTP is: {$message}");
         $msg->setTo($to);
-        $msg->setSource("php-sdk");
+        $msg->setSource("sdk");
 
         // \ClickSend\Model\SmsMessageCollection | SmsMessageCollection model
         $sms_messages = new \ClickSend\Model\SmsMessageCollection();
         $sms_messages->setMessages([$msg]);
 
         try {
-            $result   = $apiInstance->smsPricePost($sms_messages);
+            $result   = $apiInstance->smsSendPost($sms_messages);
             $response = json_decode($result);
 
             return [
-                'status'            => $response->data->messages[0]->status,
-                'delivered_message' => $response->data->messages[0]->body,
+                'status' => $response->data->messages[0]->status,
+                'otp'    => $message
             ];
         } catch (Exception $e) {
             return [

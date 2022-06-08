@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Models\Otp;
 use App\Actions\GenerateOTP;
 use Illuminate\Http\Request;
 use App\Services\SMS\NexmoService;
 use App\Services\SMS\TwilioService;
 use App\Http\Controllers\Controller;
-use App\Models\Otp;
 use App\Services\SMS\ClickSendService;
 use Illuminate\Support\Facades\Validator;
+use App\Services\Call\TwilioService as CallTwilioService;
 use App\Services\WhatsApp\TwilioService as WhatsAppTwilioService;
 
 class OTPController extends Controller
@@ -20,6 +21,7 @@ class OTPController extends Controller
     public $nexmoService;
     public $twilioService;
     public $clickSendService;
+    public $callTwilioService;
     public $whatsAppTwilioService;
 
     public function __construct(
@@ -27,12 +29,14 @@ class OTPController extends Controller
         NexmoService $nexmoService,
         TwilioService $twilioService,
         ClickSendService $clickSendService,
+        CallTwilioService $callTwilioService,
         WhatsAppTwilioService $whatsAppTwilioService
     ) {
         $this->generateOTP           = $generateOTP;
         $this->nexmoService          = $nexmoService;
         $this->twilioService         = $twilioService;
         $this->clickSendService      = $clickSendService;
+        $this->callTwilioService     = $callTwilioService;
         $this->whatsAppTwilioService = $whatsAppTwilioService;
     }
 
@@ -50,21 +54,19 @@ class OTPController extends Controller
 
         $message = $this->generateOTP->handle($phone);
 
-        switch ($this->error) {
-            case 0:
-                $this->service = $clickSend = $this->clicksendSMS($phone, $message);
-                if ($this->service[0]['status'] != 'SUCCESS') $this->error = 1;
-                break;
+        if ($this->error == 0) { // +2347030935403
+            $this->service = $nexmo = $this->nexmoSMS($phone, $message);
+            if ($this->service[0]['status'] != 0) $this->error = 1;
+        }
 
-            case 1:
-                $this->service = $nexmo = $this->nexmoSMS($phone, $message);
-                if ($this->service[0]['status'] != 0) $this->error = 2;
-                break;
+        if ($this->error == 1) { // +2347030935403
+            $this->service = $clickSend = $this->clicksendSMS($phone, $message);
+            if ($this->service[0]['status'] != 'SUCCESS') $this->error = 2;
+        }
 
-            case 2:
-                $this->service = $twilio = $this->twilioSMS($phone, $message);
-                if ($this->service[0]['status'] != 'queued') $this->error = 3;
-                break;
+        if ($this->error == 2) { // +2349018164782
+            $this->service = $twilio = $this->twilioSMS($phone, $message);
+            if ($this->service[0]['status'] != 'accepted') $this->error = 3;
         }
 
         if ($this->error == 3) {
@@ -72,9 +74,9 @@ class OTPController extends Controller
                 'status_code' => 400,
                 'status'      => 'error',
                 'data'        => [
-                    'clicksend' => $clickSend[0]['message'],
-                    'nexmo'     => $nexmo[0]['message'],
-                    'twilio'    => $twilio[0]['message']
+                    'clicksend' => $clickSend[0]['message'] ?? null,
+                    'nexmo'     => $nexmo[0]['message'] ?? null,
+                    'twilio'    => $twilio[0]['message'] ?? null,
                 ],
             ], 400);
         }
@@ -84,7 +86,7 @@ class OTPController extends Controller
             'status'      => 'success',
             'data'        => [
                 'service'           => $this->service[1],
-                'delivered_message' => $this->service[0]['delivered_message'],
+                'delivered_message' => $this->service[0],
             ],
         ]);
     }
@@ -123,7 +125,44 @@ class OTPController extends Controller
             'status'      => 'success',
             'data'        => [
                 'service'           => 'twilio-whatsapp',
-                'delivered_message' => $twilioWhatsapp['delivered_message']
+                'delivered_message' => $twilioWhatsapp['otp']
+            ],
+        ]);
+    }
+
+    public function call(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            "phone_number" => ['required', 'string', 'regex:/^\+[0-9]{13,18}$/', 'starts_with:234,+234'],
+        ]);
+
+        if ($validator->fails()) {
+            $this->checkValidation($validator);
+        }
+
+        $phone = $request->phone_number;
+
+        $message = $this->generateOTP->handle($phone);
+
+        $twilioVoiceCall = $this->callTwilioService->sendOTP($phone, $message);
+
+        // if ($twilioVoiceCall['status'] != 'completed') {
+        if ($twilioVoiceCall['status'] != 'queued') {
+            return response()->json([
+                'status_code' => 400,
+                'status'      => 'error',
+                'data'        => [
+                    'twilio' => $twilioVoiceCall['message']
+                ],
+            ], 400);
+        }
+
+        return response()->json([
+            'status_code' => 200,
+            'status'      => 'success',
+            'data'        => [
+                'service'           => 'twilio-voice',
+                'delivered_message' => $twilioVoiceCall['otp']
             ],
         ]);
     }
