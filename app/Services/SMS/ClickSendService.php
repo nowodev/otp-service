@@ -16,7 +16,7 @@ class ClickSendService implements OTPInterface
 
 
         $apiInstance = new ClickSend\Api\SMSApi(new \GuzzleHttp\Client(), $config);
-        $msg = new \ClickSend\Model\SmsMessage();
+        $msg         = new \ClickSend\Model\SmsMessage();
 
         $msg->setFrom(env('CLICKSEND_FROM_NUMBER'));
         $msg->setBody($message);
@@ -28,16 +28,16 @@ class ClickSendService implements OTPInterface
         $sms_messages->setMessages([$msg]);
 
         try {
-            $result = $apiInstance->smsPricePost($sms_messages);
+            $result   = $apiInstance->smsPricePost($sms_messages);
             $response = json_decode($result);
 
             return [
-                'status' => $response->data->messages[0]->status,
+                'status'            => $response->data->messages[0]->status,
                 'delivered_message' => $response->data->messages[0]->body,
             ];
         } catch (Exception $e) {
             return [
-                'status' => 'ERROR',
+                'status'  => 'ERROR',
                 'message' => 'Exception when calling SMSApi->smsPricePost: ', $e->getMessage(), PHP_EOL
             ];
         }

@@ -25,12 +25,12 @@ class TwilioService implements OTPInterface
             );
 
             return [
-                'status' => $response->status,
+                'status'            => $response->status,
                 'delivered_message' => $response->body
             ];
         } catch (TwilioException $e) {
             return [
-                'status' => $response->status,
+                'status'  => $response->status,
                 'message' => 'Could not send SMS notification.' . ' Twilio replied with: ' . $e
             ];
         }

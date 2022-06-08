@@ -21,12 +21,12 @@ class NexmoService implements OTPInterface
 
         if ($status == 0) {
             return [
-                'status' => $status,
+                'status'            => $status,
                 'delivered_message' => $message
             ];
         } else {
             return [
-                'status' => $status,
+                'status'  => $status,
                 'message' => 'OTP could not be sent'
             ];
         }

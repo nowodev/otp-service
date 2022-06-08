@@ -12,7 +12,7 @@ class GenerateOTP
 
         Otp::query()->create([
             'phone_number' => $phone_number,
-            'otp' => $otp
+            'otp'          => $otp
         ]);
 
         return "Your OTP is: {$otp}";
