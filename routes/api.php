@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\OTPController;
+use App\Http\Controllers\TestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,3 +24,5 @@ Route::post('sms', [OTPController::class, 'sendSMS']);
 Route::post('whatsapp', [OTPController::class, 'sendWhatsApp']);
 Route::post('call', [OTPController::class, 'call']);
 Route::post('verify', [OTPController::class, 'verifyOTP']);
+
+Route::post('test-with-trait', [TestController::class, 'index']);
