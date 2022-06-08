@@ -4,5 +4,5 @@ namespace App\Interfaces;
 
 interface OTPInterface
 {
-    public function generateOTP(string $to, string $message);
+    public function sendOTP(string $to, string $message);
 }

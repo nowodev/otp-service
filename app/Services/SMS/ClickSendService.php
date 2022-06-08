@@ -8,7 +8,7 @@ use App\Interfaces\OTPInterface;
 
 class ClickSendService implements OTPInterface
 {
-    public function generateOTP($to, $message)
+    public function sendOTP($to, $message)
     {
         // Configure HTTP basic authorization: BasicAuth
         $config = ClickSend\Configuration::getDefaultConfiguration()

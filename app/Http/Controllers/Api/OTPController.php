@@ -104,7 +104,7 @@ class OTPController extends Controller
 
         $message = $this->generateOTP->handle($phone);
 
-        $twilioWhatsapp = $this->whatsAppTwilioService->generateOTP($phone, $message);
+        $twilioWhatsapp = $this->whatsAppTwilioService->sendOTP($phone, $message);
 
 
         // if ($twilioWhatsapp['status'] != 'sent') {
@@ -172,16 +172,16 @@ class OTPController extends Controller
 
     function clicksendSMS($phone, $message)
     {
-        return [$this->clickSendService->generateOTP($phone, $message), 'clicksend-sms'];
+        return [$this->clickSendService->sendOTP($phone, $message), 'clicksend-sms'];
     }
 
     function twilioSMS($phone, $message)
     {
-        return [$this->twilioService->generateOTP($phone, $message), 'twilio-sms'];
+        return [$this->twilioService->sendOTP($phone, $message), 'twilio-sms'];
     }
 
     function nexmoSMS($phone, $message)
     {
-        return [$this->nexmoService->generateOTP($phone, $message), 'nexmo-sms'];
+        return [$this->nexmoService->sendOTP($phone, $message), 'nexmo-sms'];
     }
 }

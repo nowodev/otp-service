@@ -6,7 +6,7 @@ use App\Interfaces\OTPInterface;
 
 class NexmoService implements OTPInterface
 {
-    public function generateOTP($to, $message)
+    public function sendOTP($to, $message)
     {
         $basic  = new \Vonage\Client\Credentials\Basic(env('VONAGE_API_KEY'), env('VONAGE_API_SECRET'));
         $client = new \Vonage\Client($basic);

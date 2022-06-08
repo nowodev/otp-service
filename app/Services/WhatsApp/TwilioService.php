@@ -8,7 +8,7 @@ use Twilio\Exceptions\TwilioException;
 
 class TwilioService implements OTPInterface
 {
-    public function generateOTP($to, $message)
+    public function sendOTP($to, $message)
     {
         try {
             $client = new Client(env('TWILIO_SID'), env('TWILIO_TOKEN'));
