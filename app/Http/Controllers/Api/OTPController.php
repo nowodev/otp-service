@@ -47,7 +47,7 @@ class OTPController extends Controller
         ]);
 
         if ($validator->fails()) {
-            $this->checkValidation($validator);
+            return $this->checkValidation($validator);
         }
 
         $phone = $request->phone_number;
@@ -99,7 +99,7 @@ class OTPController extends Controller
         ]);
 
         if ($validator->fails()) {
-            $this->checkValidation($validator);
+            return $this->checkValidation($validator);
         }
 
         $phone = $request->phone_number;
@@ -137,7 +137,7 @@ class OTPController extends Controller
         ]);
 
         if ($validator->fails()) {
-            $this->checkValidation($validator);
+            return $this->checkValidation($validator);
         }
 
         $phone = $request->phone_number;
@@ -175,7 +175,7 @@ class OTPController extends Controller
         ]);
 
         if ($validator->fails()) {
-            $this->checkValidation($validator);
+            return $this->checkValidation($validator);
         }
 
         $verify = Otp::query()->where([
