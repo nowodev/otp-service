@@ -13,15 +13,12 @@ use App\Services\WhatsApp\TwilioService as WhatsAppTwilioService;
 
 class OTPController extends Controller
 {
-    public $nexmo;
-    public $twilio;
-    public $service0;
-    public $clickSend;
+    public $service;
+    public $error = 0;
     public $generateOTP;
     public $nexmoService;
     public $twilioService;
     public $clickSendService;
-    public $delivered_message0;
     public $whatsAppTwilioService;
 
     public function __construct(
@@ -31,10 +28,10 @@ class OTPController extends Controller
         ClickSendService $clickSendService,
         WhatsAppTwilioService $whatsAppTwilioService
     ) {
-        $this->nexmo                 = $nexmoService;
-        $this->twilio                = $twilioService;
         $this->generateOTP           = $generateOTP;
-        $this->clickSend             = $clickSendService;
+        $this->nexmoService          = $nexmoService;
+        $this->twilioService         = $twilioService;
+        $this->clickSendService      = $clickSendService;
         $this->whatsAppTwilioService = $whatsAppTwilioService;
     }
 
@@ -55,50 +52,44 @@ class OTPController extends Controller
         }
 
         $phone   = $request->phone_number;
-        $message = $this->generateOTP->handle();
 
-        $this->clicksend = $this->clickSendService->generateOTP($phone, $message);
+        $message = $this->generateOTP->handle($phone);
 
-        if ($this->clicksend['status'] != 'SUCCESS') {
-            $this->nexmo = $this->nexmoService->generateOTP($phone, $message);
+        switch ($this->error) {
+            case 0:
+                $this->service = $clickSend = $this->clicksendSMSService($phone, $message);
+                if ($this->service[0]['status'] != 'SUCCESS') $this->error = 1;
+                break;
 
-            if ($this->nexmo['status'] != 0) {
-                $this->twilio = $this->twilioService->generateOTP($phone, $message);
-            };
+            case 1:
+                $this->service = $nexmo = $this->nexmoSMSService($phone, $message);
+                if ($this->service[0]['status'] != 0) $this->error = 2;
+                break;
+
+            case 2:
+                $this->service = $twilio = $this->twilioSMSService($phone, $message);
+                if ($this->service[0]['status'] != 'queued') $this->error = 3;
+                break;
         }
 
-        if (!is_null($this->nexmo)) {
-            $this->service0 = $this->nexmo['status'] == 0 ? 'nexmo-sms' : 'twilio-sms';
-        }
-
-        $service = ($this->clicksend['status'] == 'SUCCESS') ? 'clicksend-sms' : $this->service0;
-
-        // if ($this->clicksend['status'] != 'SUCCESS' && $this->nexmo['status'] != 0 && $this->twilio['status'] != 'sent') {
-        if ($this->clicksend['status'] != 'SUCCESS' && $this->nexmo['status'] != 0 && $this->twilio['status'] != 'queued') {
+        if ($this->error == 3) {
             return response()->json([
                 'status_code' => 401,
                 'status'      => 'error',
                 'data'        => [
-                    'clicksend' => $this->clicksend['message'],
-                    'nexmo'     => $this->nexmo['message'],
-                    'twilio'    => $this->twilio['message']
+                    'clicksend' => $clickSend[0]['message'],
+                    'nexmo'     => $nexmo[0]['message'],
+                    'twilio'    => $twilio[0]['message']
                 ],
             ]);
         }
-
-
-        if (!is_null($this->nexmo)) {
-            $this->delivered_message0 = (!is_null($this->nexmo) && $this->nexmo['status'] == 0) ? $this->nexmo['delivered_message'] : $this->twilio['delivered_message'];
-        }
-
-        $delivered_message = ($this->clicksend['status'] == 'SUCCESS') ? $this->clicksend['delivered_message'] : $this->delivered_message0;
 
         return response()->json([
             'status_code' => 200,
             'status'      => 'success',
             'data'        => [
-                'service'           => $service,
-                'delivered_message' => $delivered_message
+                'service'           => $this->service[1],
+                'delivered_message' => $this->service[0]['delivered_message'],
             ],
         ]);
     }
@@ -121,7 +112,8 @@ class OTPController extends Controller
         }
 
         $phone   = $request->phone_number;
-        $message = $this->generateOTP->handle();
+
+        $message = $this->generateOTP->handle($phone);
 
         $twilioWhatsapp = $this->whatsAppTwilioService->generateOTP($phone, $message);
 
@@ -145,5 +137,20 @@ class OTPController extends Controller
                 'delivered_message' => $twilioWhatsapp['delivered_message']
             ],
         ]);
+    }
+
+    function clicksendSMSService($phone, $message)
+    {
+        return [$this->clickSendService->generateOTP($phone, $message), 'clicksend-sms'];
+    }
+
+    function twilioSMSService($phone, $message)
+    {
+        return [$this->twilioService->generateOTP($phone, $message), 'twilio-sms'];
+    }
+
+    function nexmoSMSService($phone, $message)
+    {
+        return [$this->nexmoService->generateOTP($phone, $message), 'nexmo-sms'];
     }
 }
