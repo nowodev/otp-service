@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Services\SMS\NexmoService;
 use App\Services\SMS\TwilioService;
 use App\Http\Controllers\Controller;
+use App\Models\Otp;
 use App\Services\SMS\ClickSendService;
 use Illuminate\Support\Facades\Validator;
 use App\Services\WhatsApp\TwilioService as WhatsAppTwilioService;
@@ -42,46 +43,40 @@ class OTPController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'status_code' => 401,
-                'message'     => 'Error Validation',
-                'data'        => [
-                    $validator->errors()
-                ],
-            ]);
+            $this->checkValidation($validator);
         }
 
-        $phone   = $request->phone_number;
+        $phone = $request->phone_number;
 
         $message = $this->generateOTP->handle($phone);
 
         switch ($this->error) {
             case 0:
-                $this->service = $clickSend = $this->clicksendSMSService($phone, $message);
+                $this->service = $clickSend = $this->clicksendSMS($phone, $message);
                 if ($this->service[0]['status'] != 'SUCCESS') $this->error = 1;
                 break;
 
             case 1:
-                $this->service = $nexmo = $this->nexmoSMSService($phone, $message);
+                $this->service = $nexmo = $this->nexmoSMS($phone, $message);
                 if ($this->service[0]['status'] != 0) $this->error = 2;
                 break;
 
             case 2:
-                $this->service = $twilio = $this->twilioSMSService($phone, $message);
+                $this->service = $twilio = $this->twilioSMS($phone, $message);
                 if ($this->service[0]['status'] != 'queued') $this->error = 3;
                 break;
         }
 
         if ($this->error == 3) {
             return response()->json([
-                'status_code' => 401,
+                'status_code' => 400,
                 'status'      => 'error',
                 'data'        => [
                     'clicksend' => $clickSend[0]['message'],
                     'nexmo'     => $nexmo[0]['message'],
                     'twilio'    => $twilio[0]['message']
                 ],
-            ]);
+            ], 400);
         }
 
         return response()->json([
@@ -102,16 +97,10 @@ class OTPController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'status_code' => 401,
-                'message'     => 'Error Validation',
-                'data'        => [
-                    $validator->errors()
-                ],
-            ]);
+            $this->checkValidation($validator);
         }
 
-        $phone   = $request->phone_number;
+        $phone = $request->phone_number;
 
         $message = $this->generateOTP->handle($phone);
 
@@ -121,12 +110,12 @@ class OTPController extends Controller
         // if ($twilioWhatsapp['status'] != 'sent') {
         if ($twilioWhatsapp['status'] != 'queued') {
             return response()->json([
-                'status_code' => 401,
+                'status_code' => 400,
                 'status'      => 'error',
                 'data'        => [
                     'twilio' => $twilioWhatsapp['message']
                 ],
-            ]);
+            ], 400);
         }
 
         return response()->json([
@@ -139,17 +128,59 @@ class OTPController extends Controller
         ]);
     }
 
-    function clicksendSMSService($phone, $message)
+    public function verifyOTP(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            "phone_number" => ['required', 'string', 'regex:/^\+[0-9]{13,18}$/', 'starts_with:234,+234'],
+            "otp"          => ['required', 'numeric', 'digits:6']
+        ]);
+
+        if ($validator->fails()) {
+            $this->checkValidation($validator);
+        }
+
+        $verify = Otp::query()->where([
+            'phone_number' => $request->phone_number,
+            'otp'          => $request->otp
+        ])->first();
+
+        if (!$verify) {
+            return response()->json([
+                'status_code' => 400,
+                'status'      => 'error',
+                'message'     => 'Invalid OTP. Please check the OTP and try again.'
+            ], 400);
+        }
+
+        return response()->json([
+            'status_code' => 200,
+            'status'      => 'success',
+            'message'     => 'OTP Verified successfully.'
+        ]);
+    }
+
+    function checkValidation($validator)
+    {
+        return response()->json([
+            'status_code' => 400,
+            'message'     => 'Error Validation',
+            'data'        => [
+                $validator->errors()
+            ],
+        ], 400);
+    }
+
+    function clicksendSMS($phone, $message)
     {
         return [$this->clickSendService->generateOTP($phone, $message), 'clicksend-sms'];
     }
 
-    function twilioSMSService($phone, $message)
+    function twilioSMS($phone, $message)
     {
         return [$this->twilioService->generateOTP($phone, $message), 'twilio-sms'];
     }
 
-    function nexmoSMSService($phone, $message)
+    function nexmoSMS($phone, $message)
     {
         return [$this->nexmoService->generateOTP($phone, $message), 'nexmo-sms'];
     }

@@ -21,4 +21,4 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::post('sms', [OTPController::class, 'sendSMS']);
 Route::post('whatsapp', [OTPController::class, 'sendWhatsApp']);
-Route::get('verify', [OTPController::class, 'verifyOTP']);
+Route::post('verify', [OTPController::class, 'verifyOTP']);
