@@ -19,7 +19,7 @@ class ClickSendService implements OTPInterface
         $apiInstance = new ClickSend\Api\SMSApi(new \GuzzleHttp\Client(), $config);
         $msg         = new \ClickSend\Model\SmsMessage();
 
-        // $msg->setFrom(env('CLICKSEND_FROM_NUMBER'));
+        if (!empty(env('CLICKSEND_FROM_NUMBER'))) $msg->setFrom(env('CLICKSEND_FROM_NUMBER'));
         $msg->setBody("Your OTP is: {$message}");
         $msg->setTo($to);
         $msg->setSource("sdk");

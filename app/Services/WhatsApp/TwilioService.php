@@ -16,7 +16,7 @@ class TwilioService implements OTPInterface
             $response = $client->messages->create(
                 "whatsapp:{$to}",
                 [
-                    "from" => "whatsapp:+14155238886",
+                    "from" => "whatsapp:" . env('TWILIO_WHATSAPP_FROM'),
                     "body" => "Your OTP is: {$message}"
                 ]
             );
