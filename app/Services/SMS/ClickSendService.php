@@ -12,14 +12,13 @@ class ClickSendService implements OTPInterface
     {
         // Configure HTTP basic authorization: BasicAuth
         $config = ClickSend\Configuration::getDefaultConfiguration()
-            ->setUsername(env('CLICKSEND_USERNAME'))
-            ->setPassword(env('CLICKSEND_API_KEY'));
-
+        ->setUsername(config('services.clicksend.username'))
+        ->setPassword(config('services.clicksend.api_key'));
 
         $apiInstance = new ClickSend\Api\SMSApi(new \GuzzleHttp\Client(), $config);
         $msg         = new \ClickSend\Model\SmsMessage();
 
-        if (!empty(env('CLICKSEND_FROM_NUMBER'))) $msg->setFrom(env('CLICKSEND_FROM_NUMBER'));
+        if (!empty(config('services.clicksend.from'))) $msg->setFrom(config('app.clicksend.from'));
         $msg->setBody("Your OTP is: {$message}");
         $msg->setTo($to);
         $msg->setSource("sdk");

@@ -40,6 +40,7 @@ trait OTPTrait
                 if ($twilioWhatsapp['status'] != 'queued') return false;
 
                 return true;
+
                 break;
 
             case 'call':
@@ -48,21 +49,25 @@ trait OTPTrait
                 if ($twilioVoiceCall['status'] != 'queued') return false;
 
                 return true;
+
                 break;
 
             default:
-                if ($this->error == 0) { // +2347030935403
+                if ($this->error == 0) {
                     $nexmo = $this->nexmoService->sendOTP($phone, $message);
+
                     if ($nexmo['status'] != 0) $this->error = 1;
                 }
 
-                if ($this->error == 1) { // +2347030935403
+                if ($this->error == 1) {
                     $clickSend = $this->clickSendService->sendOTP($phone, $message);
+
                     if ($clickSend['status'] != 'SUCCESS') $this->error = 2;
                 }
 
-                if ($this->error == 2) { // +2349018164782
+                if ($this->error == 2) {
                     $twilio = $this->twilioService->sendOTP($phone, $message);
+
                     if ($twilio['status'] != 'accepted') $this->error = 3;
                 }
 

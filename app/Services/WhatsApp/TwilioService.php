@@ -11,12 +11,12 @@ class TwilioService implements OTPInterface
     public function sendOTP($to, $message)
     {
         try {
-            $client = new Client(env('TWILIO_SID'), env('TWILIO_TOKEN'));
+            $client = new Client(config('services.twilio.account_sid'), config('services.twilio.auth_token'));
 
             $response = $client->messages->create(
                 "whatsapp:{$to}",
                 [
-                    "from" => "whatsapp:" . env('TWILIO_WHATSAPP_FROM'),
+                    "from" => "whatsapp:" . config('services.twilio.whatsapp_from'),
                     "body" => "Your OTP is: {$message}"
                 ]
             );

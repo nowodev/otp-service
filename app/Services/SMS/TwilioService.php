@@ -12,14 +12,15 @@ class TwilioService implements OTPInterface
     {
         try {
             // Your Account SID and Auth Token from twilio.com/console
-            $client = new Client(env('TWILIO_SID'), env('TWILIO_TOKEN'));
+            $client = new Client(config('services.twilio.account_sid'), config('services.twilio.auth_token'));
 
             $response = $client->messages->create(
                 $to,
                 [
                     // A Twilio phone number you purchased at twilio.com/console
                     // 'from' => '+19895821065',
-                    "messagingServiceSid" => env('TWILIO_MSSID'),
+                    'from' => config('services.twilio.from') != '' ? config('services.twilio.from') : '',
+                    "messagingServiceSid" => config('services.twilio.account_mssid'),
                     // the body of the text message you'd like to send
                     'body' =>  "Your OTP is: {$message}"
                 ]

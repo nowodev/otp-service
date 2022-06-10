@@ -30,4 +30,28 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    /*
+	 * SMS providers
+	 */
+    'vonage' => [
+        'key'      => env('VONAGE_KEY', ''),
+        'secret'   => env('VONAGE_SECRET', ''),
+        'sms_from' => env('VONAGE_FROM', ''),
+    ],
+
+    'twilio' => [
+        'account_sid'   => env('TWILIO_ACCOUNT_SID', ''),
+        'account_mssid' => env('TWILIO_ACCOUNT_MSSID', ''),
+        'auth_token'    => env('TWILIO_AUTH_TOKEN', ''),
+        'from'          => env('TWILIO_SMS_FROM', ''),       // optional
+        'call_from'     => env('TWILIO_CALL_FROM', ''),        // optional
+        'whatsapp_from' => env('TWILIO_WHATSAPP_FROM', ''),   // optional
+    ],
+
+    'clicksend' => [
+        'username' => env('CLICKSEND_USERNAME', ''),
+        'api_key'  => env('CLICKSEND_API_KEY', ''),
+        'from'     => env('CLICKSEND_FROM_NUMBER', ''),
+    ],
+
 ];

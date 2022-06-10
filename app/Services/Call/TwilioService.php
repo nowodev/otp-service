@@ -12,11 +12,11 @@ class TwilioService implements OTPInterface
     public function sendOTP($to, $message)
     {
         try {
-            $client = new Client(env('TWILIO_SID'), env('TWILIO_TOKEN'));
+            $client = new Client(config('services.twilio.account_sid'), config('services.twilio.auth_token'));
 
             $response = $client->calls->create(
                 $to,
-                env('TWILIO_CALL_FROM'), // from
+                config('services.twilio.call_from'), // from
                 [
                     "twiml" => $this->generateTwiMLForVoiceCall($message)
                 ]

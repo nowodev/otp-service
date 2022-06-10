@@ -9,7 +9,7 @@ class NexmoService implements OTPInterface
     public function sendOTP($to, $message)
     {
         try {
-            $basic  = new \Vonage\Client\Credentials\Basic(env('VONAGE_API_KEY'), env('VONAGE_API_SECRET'));
+            $basic  = new \Vonage\Client\Credentials\Basic(config('services.vonage.key'), config('services.vonage.secret'));
             $client = new \Vonage\Client($basic);
 
             $sendMessage = $client->sms()->send(
